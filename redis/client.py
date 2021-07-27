@@ -2866,7 +2866,8 @@ class Redis:
         return self.execute_command('XTRIM', name, *pieces)
 
     # SORTED SET COMMANDS
-    def zadd(self, name, mapping, nx=False, xx=False, ch=False, incr=False):
+    def zadd(self, name, mapping, nx=False, xx=False, gt=False, lt=False,
+             ch=False, incr=False):
         """
         Set any number of element-name, score pairs to the key ``name``. Pairs
         are specified as a dict of element-names keys to score values.
@@ -2876,6 +2877,12 @@ class Redis:
 
         ``xx`` forces ZADD to only update scores of elements that already
         exist. New elements will not be added.
+
+        ``gt`` only update existing elements if the new score is greater than
+        the current score. This flag doesn't prevent adding new elements.
+
+        ``lt`` only update existing elements if the new score is less than
+        the current score. This flag doesn't prevent adding new elements.
 
         ``ch`` modifies the return value to be the numbers of elements changed.
         Changed elements include new elements that were added and elements
@@ -2894,6 +2901,8 @@ class Redis:
             raise DataError("ZADD requires at least one element/score pair")
         if nx and xx:
             raise DataError("ZADD allows either 'nx' or 'xx', not both")
+        if gt and lt:
+            raise DataError("ZADD allows either 'gt' or 'lt', not both")
         if incr and len(mapping) != 1:
             raise DataError("ZADD option 'incr' only works when passing a "
                             "single element/score pair")
@@ -2903,6 +2912,10 @@ class Redis:
             pieces.append(b'NX')
         if xx:
             pieces.append(b'XX')
+        if gt:
+            pieces.append(b'GT')
+        if lt:
+            pieces.append(b'LT')
         if ch:
             pieces.append(b'CH')
         if incr:
